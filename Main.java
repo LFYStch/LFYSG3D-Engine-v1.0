@@ -71,8 +71,8 @@ class dP extends JPanel{
 				Rectangle bounds = triang.getBounds();
 				g2d.setPaint(new TexturePaint(texture,bounds));
 				g2d.fillPolygon(xPoints, yPoints, 3);
-				if(t.v1.z < light_source1){
-					float alpha = (t.v1.z - (light_source1)) * 0.5f; 
+				if(t.v1.z < light_source1.z){
+					alpha = Math.max(0.0f, Math.min(1.0f, alpha)); 
 					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
 					g2d.setColor(new Color(255, 255, 255));
 					g2d.fillPolygon(xPoints, yPoints, 3);

@@ -1,0 +1,11 @@
+chmod +x setup
+clear
+read -sp "Would you like to install the jdk? y/n " yn
+read -sp "Are you sure? y/n " yn
+if [[ "$choice" == "y"]]; then
+    ./setup
+else
+    echo "Ok, but if u dont want to install the your code wont work... >:)"
+javac Main.java
+echo "copyright LFYStch"
+java Main

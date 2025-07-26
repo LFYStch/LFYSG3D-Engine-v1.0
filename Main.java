@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) {
         JFrame w = new JFrame();
         dP d = new dP();
-        w.setTitle("3D UV Test");
+        w.setTitle("3D Test");
         w.setSize(500, 500);
         w.setResizable(false);
         w.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -39,7 +39,7 @@ class dP extends JPanel {
 
     public void loadTextures() {
         try {
-            texture1 = ImageIO.read(new File("dir.png")); // must exist next to your code
+            texture1 = ImageIO.read(new File("dir.png"));
         } catch (IOException e) {
             System.err.println("Texture load failed.");
             e.printStackTrace();

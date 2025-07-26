@@ -16,8 +16,6 @@ public class Main{
     	w.setVisible(true);
 		javax.swing.Timer timer = new javax.swing.Timer(50,e -> d.repaint());
 		timer.start();
-		int f = 5;
-		System.out.println(-1 - f);
 	}
 }
 class dP extends JPanel{
@@ -40,7 +38,7 @@ class dP extends JPanel{
 	
 	public dP() {
         	setDoubleBuffered(true);
-			cam = new vec3(1,-3,0);
+			cam = new vec3(0,-3,0);
 			camYaw = 0;
 			camPitch = 0;
 			loadTextures();
@@ -53,6 +51,9 @@ class dP extends JPanel{
 		Graphics2D g2d = (Graphics2D)g;
 		g2d.setColor(Color.BLACK);
 		g2d.fillRect(0,0,getWidth(),getHeight());
+		mesh tester = sp.test(0,0,5);
+		AABB testHitbox = new AABB(new vec3(-5,-5,9.99),new vec3(5,5,10.99));
+		drawMesh(tester,g2d,texture1);
 	}
 	public void drawMesh(mesh ts,Graphics2D g2d,BufferedImage texture){
 		for (int i = 0; i < ts.tris.length; i++) {

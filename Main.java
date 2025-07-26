@@ -1,180 +1,187 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.*;
 import java.util.*;
 import java.io.*;
 import javax.imageio.*;
-import java.awt.image.*;
-public class Main{
-	public static void main(String args[]){
-		JFrame w = new JFrame();
-		dP d = new dP();
-		w.setTitle("3d test");
-		w.setSize(500,500);
-		w.setResizable(false);
-		w.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+public class Main {
+    public static void main(String[] args) {
+        JFrame w = new JFrame();
+        dP d = new dP();
+        w.setTitle("3D UV Test");
+        w.setSize(500, 500);
+        w.setResizable(false);
+        w.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         w.add(d);
-    	w.setVisible(true);
-		javax.swing.Timer timer = new javax.swing.Timer(50,e -> d.repaint());
-		timer.start();
-	}
+        w.setVisible(true);
+        new javax.swing.Timer(50, e -> d.repaint()).start();
+    }
 }
-class dP extends JPanel{
-	vec3 light_source1;
-	vec3 cam;
-	double camYaw;
-	double camPitch;
-	BufferedImage texture1;
-	spawner sp;
-	float alpha;
-	public void loadTextures(){
-		
-		try {
-            texture1 = ImageIO.read(new File("dir.png"));
+
+class dP extends JPanel {
+    vec3 cam;
+    double camYaw, camPitch;
+    vec3 light_source1;
+    BufferedImage texture1;
+    spawner sp;
+    float alpha;
+
+    public dP() {
+        setDoubleBuffered(true);
+        cam = new vec3(0, -3, 0, 0, 0);
+        light_source1 = new vec3(cam.x, cam.y, cam.z - 2, 0, 0);
+        camYaw = 0;
+        camPitch = 0;
+        loadTextures();
+        sp = new spawner();
+    }
+
+    public void loadTextures() {
+        try {
+            texture1 = ImageIO.read(new File("dir.png")); // must exist next to your code
         } catch (IOException e) {
             System.err.println("Texture load failed.");
             e.printStackTrace();
         }
-	}
-	
-	
-	
-	public dP() {
-        	setDoubleBuffered(true);
-			cam = new vec3(0,-3,0);
-			light_source1 = new vec3(cam.x,cam.y,cam.z-2);
-			camYaw = 0;
-			camPitch = 0;
-			loadTextures();
-			sp = new spawner();
-   	 }
-	
-	@Override
-	protected void paintComponent(Graphics g){
-		super.paintComponent(g);
-		Graphics2D g2d = (Graphics2D)g;
-		g2d.setColor(Color.BLACK);
-		g2d.fillRect(0,0,getWidth(),getHeight());
-		mesh tester = sp.test(0,0,5);
-		AABB testHitbox = new AABB(new vec3(-5,-5,9.99),new vec3(5,5,10.99));
-		drawMesh(tester,g2d,texture1);
-	}
-	public void drawMesh(mesh ts,Graphics2D g2d,BufferedImage texture){
-		for (int i = 0; i < ts.tris.length; i++) {
-			for (int j = 0; j < ts.tris[i].length; j++) {
-				tri t = ts.tris[i][j];
-
-				vec2 vn = t.v1.project(cam, camYaw, camPitch);
-				vec2 v1n = t.v2.project(cam, camYaw, camPitch);
-				vec2 v2n = t.v3.project(cam, camYaw, camPitch);
-				int[] xPoints = { (int) vn.x, (int) v1n.x, (int) v2n.x };
-				int[] yPoints = { (int) vn.y, (int) v1n.y, (int) v2n.y };
-				Polygon triang = new Polygon(xPoints,yPoints,3);
-				Rectangle bounds = triang.getBounds();
-				g2d.setPaint(new TexturePaint(texture,bounds));
-				g2d.fillPolygon(xPoints, yPoints, 3);
-				if(t.v1.z < light_source1.z){
-					 alpha = Math.max(0.0f, Math.min(1.0f, alpha)); 
-					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-					g2d.setColor(new Color(255, 255, 255));
-					g2d.fillPolygon(xPoints, yPoints, 3);
-				}
-				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-			}
-		}
-
-
-
-	}
-}
-class vec3{
-	double x,y,z;
-	double znear = 5;
-	public vec3(double x,double y,double z){
-		this.x = x;
-		this.y = y;
-		this.z = z;
-	}
-	public vec2 project(vec3 cam,double yaw,double pitch){
-		vec2 o = new vec2(0,0);
-		double nX = this.x - cam.x;
-		double nY = this.y - cam.y;
-		double nZ = this.z - cam.z;
-		if(nZ>=znear){
-			double rotX = nX * Math.cos(yaw) - nZ * Math.sin(yaw);
-			double rotZ = nX * Math.sin(yaw) + nZ * Math.cos(yaw);
-
-			double finalY = nY * Math.cos(pitch) - rotZ * Math.sin(pitch);
-			double finalZ = nY * Math.sin(pitch) + rotZ * Math.cos(pitch);
-			
-			double fov = 200; 
-			double scale = fov / Math.max(finalZ, 0.1);
-			double screenX = rotX * scale + 250;
-			double screenY = finalY * scale + 250;
-			o =  new vec2(screenX, screenY);
-		}else if(nZ<znear){
-
-			o =  new vec2(Double.NaN,Double.NaN);
-		}
-		return o;
-	}
-}
-class vec2{
-	double x,y;
-	public vec2(double x,double y){
-		this.x = x;
-		this.y = y;
-	}
-}
-class tri{
-	vec3 v1,v2,v3;
-	public tri(vec3 v1,vec3 v2,vec3 v3){
-		this.v1 = v1;
-		this.v2 = v2;
-		this.v3 = v3;
-	}
-}
-class mesh{
-	tri[][] tris;
-	public mesh(tri[][] tris){
-		this.tris = tris;
-	}
-}
-class tester{
-	double x,y,z;
-	public tester(double x,double y,double z){
-		this.x = x;
-		this.y = y;
-		this.z = z;
-	}
-	mesh m = new mesh(new tri[][] {
-		{
-			new tri(
-				new vec3(x - 5, y - 5, z+5),
-				new vec3(x - 5, y + 5, z+5),
-				new vec3(x + 5, y + 5, z+5)
-			)
-		}
-	});
-
-}
-class spawner{
-	public spawner(){}
-	public mesh test(double x,double y,double z){
-		tester t = new tester(x,y,z);
-		return t.m;
-	}
-}
-class AABB{
-    vec3 min,max;
-    public AABB(vec3 min,vec3 max){
-        this.min = min;
-        this.max = max;
     }
-    public boolean collidesWith(AABB other) {
-    return (max.x > other.min.x && min.x < other.max.x) &&
-           (max.y > other.min.y && min.y < other.max.y) &&
-           (max.z > other.min.z && min.z < other.max.z);
-	}
 
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+        mesh tester = sp.test(0, 0, 5);
+        drawMesh(tester, g2d, texture1);
+    }
+
+    public void drawMesh(mesh ts, Graphics2D g2d, BufferedImage texture) {
+        for (tri[] strip : ts.tris) {
+            for (tri t : strip) {
+                vec2 v1 = t.v1.project(cam, camYaw, camPitch);
+                vec2 v2 = t.v2.project(cam, camYaw, camPitch);
+                vec2 v3 = t.v3.project(cam, camYaw, camPitch);
+                int[] xPoints = { (int) v1.x, (int) v2.x, (int) v3.x };
+                int[] yPoints = { (int) v1.y, (int) v2.y, (int) v3.y };
+
+                int minX = Math.max(0, Math.min(xPoints[0], Math.min(xPoints[1], xPoints[2])));
+                int maxX = Math.min(getWidth() - 1, Math.max(xPoints[0], Math.max(xPoints[1], xPoints[2])));
+                int minY = Math.max(0, Math.min(yPoints[0], Math.min(yPoints[1], yPoints[2])));
+                int maxY = Math.min(getHeight() - 1, Math.max(yPoints[0], Math.max(yPoints[1], yPoints[2])));
+
+                for (int y = minY; y <= maxY; y++) {
+                    for (int x = minX; x <= maxX; x++) {
+                        double[] bary = computeBarycentric(xPoints[0], yPoints[0], xPoints[1], yPoints[1], xPoints[2], yPoints[2], x, y);
+                        double l1 = bary[0], l2 = bary[1], l3 = bary[2];
+
+                        if (l1 >= 0 && l2 >= 0 && l3 >= 0) {
+                            double u = l1 * t.v1.u + l2 * t.v2.u + l3 * t.v3.u;
+                            double v = l1 * t.v1.v + l2 * t.v2.v + l3 * t.v3.v;
+
+                            int texX = (int)(u * texture.getWidth());
+                            int texY = (int)(v * texture.getHeight());
+
+                            if (texX >= 0 && texX < texture.getWidth() && texY >= 0 && texY < texture.getHeight()) {
+                                g2d.setColor(new Color(texture.getRGB(texX, texY)));
+                                g2d.drawLine(x, y, x, y);
+                            }
+                        }
+                    }
+                }
+
+                if (t.v1.z < light_source1.z) {
+                    alpha = Math.max(0.0f, Math.min(1.0f, alpha));
+                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                    g2d.setColor(Color.WHITE);
+                    g2d.fillPolygon(xPoints, yPoints, 3);
+                }
+
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            }
+        }
+    }
+
+    double[] computeBarycentric(double x1, double y1, double x2, double y2, double x3, double y3, int px, int py) {
+        double det = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);
+        double l1 = ((y2 - y3)*(px - x3) + (x3 - x2)*(py - y3)) / det;
+        double l2 = ((y3 - y1)*(px - x3) + (x1 - x3)*(py - y3)) / det;
+        double l3 = 1 - l1 - l2;
+        return new double[]{l1, l2, l3};
+    }
 }
-        
+
+class vec3 {
+    double x, y, z;
+    double u, v;
+    double znear = 5;
+
+    public vec3(double x, double y, double z, double u, double v) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.u = u;
+        this.v = v;
+    }
+
+    public vec2 project(vec3 cam, double yaw, double pitch) {
+        double nX = this.x - cam.x;
+        double nY = this.y - cam.y;
+        double nZ = this.z - cam.z;
+        if (nZ >= znear) {
+            double rotX = nX * Math.cos(yaw) - nZ * Math.sin(yaw);
+            double rotZ = nX * Math.sin(yaw) + nZ * Math.cos(yaw);
+            double finalY = nY * Math.cos(pitch) - rotZ * Math.sin(pitch);
+            double finalZ = nY * Math.sin(pitch) + rotZ * Math.cos(pitch);
+            double scale = 200 / Math.max(finalZ, 0.1);
+            return new vec2(rotX * scale + 250, finalY * scale + 250);
+        } else {
+            return new vec2(Double.NaN, Double.NaN);
+        }
+    }
+}
+
+class vec2 {
+    double x, y;
+    public vec2(double x, double y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class tri {
+    vec3 v1, v2, v3;
+    public tri(vec3 v1, vec3 v2, vec3 v3) {
+        this.v1 = v1;
+        this.v2 = v2;
+        this.v3 = v3;
+    }
+}
+
+class mesh {
+    tri[][] tris;
+    public mesh(tri[][] tris) {
+        this.tris = tris;
+    }
+}
+
+class tester {
+    mesh m;
+    public tester(double x, double y, double z) {
+        m = new mesh(new tri[][] {
+            {
+                new tri(
+                    new vec3(x - 5, y - 5, z + 5, 0, 0),
+                    new vec3(x - 5, y + 5, z + 5, 0, 1),
+                    new vec3(x + 5, y + 5, z + 5, 1, 1)
+                )
+            }
+        });
+    }
+}
+
+class spawner {
+    public mesh test(double x, double y, double z) {
+        return new tester(x, y, z).m;
+    }
+}

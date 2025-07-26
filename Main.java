@@ -19,6 +19,7 @@ public class Main{
 	}
 }
 class dP extends JPanel{
+	vec3 light_source1;
 	vec3 cam;
 	double camYaw;
 	double camPitch;
@@ -39,6 +40,7 @@ class dP extends JPanel{
 	public dP() {
         	setDoubleBuffered(true);
 			cam = new vec3(0,-3,0);
+			light_source1 = new vec3(cam.x,cam.y,cam.z-2);
 			camYaw = 0;
 			camPitch = 0;
 			loadTextures();
@@ -63,13 +65,19 @@ class dP extends JPanel{
 				vec2 vn = t.v1.project(cam, camYaw, camPitch);
 				vec2 v1n = t.v2.project(cam, camYaw, camPitch);
 				vec2 v2n = t.v3.project(cam, camYaw, camPitch);
-
 				int[] xPoints = { (int) vn.x, (int) v1n.x, (int) v2n.x };
 				int[] yPoints = { (int) vn.y, (int) v1n.y, (int) v2n.y };
 				Polygon triang = new Polygon(xPoints,yPoints,3);
 				Rectangle bounds = triang.getBounds();
 				g2d.setPaint(new TexturePaint(texture,bounds));
 				g2d.fillPolygon(xPoints, yPoints, 3);
+				if(t.v1.z < light_source1){
+					float alpha = (t.v1.z - (light_source1)) * 0.5f; 
+					g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+					g2d.setColor(new Color(255, 255, 255));
+					g2d.fillPolygon(xPoints, yPoints, 3);
+				}
+				g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 			}
 		}
 

@@ -1,4 +1,4 @@
-hchmod +x setup
+chmod +x setup
 clear
 read -sp "Would you like to install the jdk? y/n " yn
 read -sp "Are you sure? y/n " yn

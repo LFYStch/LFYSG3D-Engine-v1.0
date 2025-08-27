@@ -57,50 +57,68 @@ class dP extends JPanel {
     }
 
     public void drawMesh(mesh ts, Graphics2D g2d, BufferedImage texture) {
-        for (tri[] strip : ts.tris) {
-            for (tri t : strip) {
-                vec2 v1 = t.v1.project(cam, camYaw, camPitch);
-                vec2 v2 = t.v2.project(cam, camYaw, camPitch);
-                vec2 v3 = t.v3.project(cam, camYaw, camPitch);
-                int[] xPoints = { (int) v1.x, (int) v2.x, (int) v3.x };
-                int[] yPoints = { (int) v1.y, (int) v2.y, (int) v3.y };
 
-                int minX = Math.max(0, Math.min(xPoints[0], Math.min(xPoints[1], xPoints[2])));
-                int maxX = Math.min(getWidth() - 1, Math.max(xPoints[0], Math.max(xPoints[1], xPoints[2])));
-                int minY = Math.max(0, Math.min(yPoints[0], Math.min(yPoints[1], yPoints[2])));
-                int maxY = Math.min(getHeight() - 1, Math.max(yPoints[0], Math.max(yPoints[1], yPoints[2])));
-
-                for (int y = minY; y <= maxY; y++) {
-                    for (int x = minX; x <= maxX; x++) {
-                        double[] bary = computeBarycentric(xPoints[0], yPoints[0], xPoints[1], yPoints[1], xPoints[2], yPoints[2], x, y);
-                        double l1 = bary[0], l2 = bary[1], l3 = bary[2];
-
-                        if (l1 >= 0 && l2 >= 0 && l3 >= 0) {
-                            double u = l1 * t.v1.u + l2 * t.v2.u + l3 * t.v3.u;
-                            double v = l1 * t.v1.v + l2 * t.v2.v + l3 * t.v3.v;
-
-                            int texX = (int)(u * texture.getWidth());
-                            int texY = (int)(v * texture.getHeight());
-
-                            if (texX >= 0 && texX < texture.getWidth() && texY >= 0 && texY < texture.getHeight()) {
-                                g2d.setColor(new Color(texture.getRGB(texX, texY)));
-                                g2d.drawLine(x, y, x, y);
-                            }
-                        }
-                    }
-                }
-
-                if (t.v1.z < light_source1.z) {
-                    alpha = Math.max(0.0f, Math.min(1.0f, alpha));
-                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                    g2d.setColor(Color.WHITE);
-                    g2d.fillPolygon(xPoints, yPoints, 3);
-                }
-
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-            }
+    java.util.List<tri> sortedTris = new java.util.ArrayList<>();
+    for (tri[] strip : ts.tris) {
+        for (tri t : strip) {
+            sortedTris.add(t);
         }
     }
+
+   
+    sortedTris.sort((a, b) -> {
+        double za = (a.v1.z + a.v2.z + a.v3.z) / 3.0;
+        double zb = (b.v1.z + b.v2.z + b.v3.z) / 3.0;
+        return Double.compare(zb, za);
+    });
+
+    for (tri t : sortedTris) {
+        vec2 v1 = t.v1.project(cam, camYaw, camPitch);
+        vec2 v2 = t.v2.project(cam, camYaw, camPitch);
+        vec2 v3 = t.v3.project(cam, camYaw, camPitch);
+
+        if (Double.isNaN(v1.x) || Double.isNaN(v2.x) || Double.isNaN(v3.x)) continue;
+
+        int[] xPoints = { (int) v1.x, (int) v2.x, (int) v3.x };
+        int[] yPoints = { (int) v1.y, (int) v2.y, (int) v3.y };
+
+        int minX = Math.max(0, Math.min(xPoints[0], Math.min(xPoints[1], xPoints[2])));
+        int maxX = Math.min(getWidth() - 1, Math.max(xPoints[0], Math.max(xPoints[1], xPoints[2])));
+        int minY = Math.max(0, Math.min(yPoints[0], Math.min(yPoints[1], yPoints[2])));
+        int maxY = Math.min(getHeight() - 1, Math.max(yPoints[0], Math.max(yPoints[1], yPoints[2])));
+
+        for (int y = minY; y <= maxY; y++) {
+            for (int x = minX; x <= maxX; x++) {
+                double[] bary = computeBarycentric(xPoints[0], yPoints[0], xPoints[1], yPoints[1], xPoints[2], yPoints[2], x, y);
+                double l1 = bary[0], l2 = bary[1], l3 = bary[2];
+
+                if (l1 >= 0 && l2 >= 0 && l3 >= 0) {
+                    double u = l1 * t.v1.u + l2 * t.v2.u + l3 * t.v3.u;
+                    double v = l1 * t.v1.v + l2 * t.v2.v + l3 * t.v3.v;
+
+                    int texX = (int)(u * texture.getWidth());
+                    int texY = (int)(v * texture.getHeight());
+
+                    if (texX >= 0 && texX < texture.getWidth() && texY >= 0 && texY < texture.getHeight()) {
+                        g2d.setColor(new Color(texture.getRGB(texX, texY)));
+                        g2d.drawLine(x, y, x, y);
+                    }
+                }
+            }
+        }
+
+        if (t.v1.z < light_source1.z) {
+            alpha = Math.max(0.0f, Math.min(1.0f, alpha));
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g2d.setColor(Color.WHITE);
+            g2d.fillPolygon(xPoints, yPoints, 3);
+        }
+
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+    }
+}
+
+
 
     double[] computeBarycentric(double x1, double y1, double x2, double y2, double x3, double y3, int px, int py) {
         double det = (y2 - y3)*(x1 - x3) + (x3 - x2)*(y1 - y3);

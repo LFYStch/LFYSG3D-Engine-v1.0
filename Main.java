@@ -53,7 +53,14 @@ class dP extends JPanel {
         g2d.setColor(Color.BLACK);
         g2d.fillRect(0, 0, getWidth(), getHeight());
         mesh tester = sp.test(0, 0, 5);
-        drawMesh(tester);
+        java.util.List<mesh> sorter = new java.util.ArrayList<>();
+        sorter.add(tester);
+        sorter.sort((a,b) ->{
+            double za = (a.z) / 3.0;
+            double zb = (b.z) / 3.0;
+            return Double.compare(zb, za);
+        }
+        drawMesh(sorter.get(0),g2d,texture1);
     }
 
     public void drawMesh(mesh ts, Graphics2D g2d, BufferedImage texture) {

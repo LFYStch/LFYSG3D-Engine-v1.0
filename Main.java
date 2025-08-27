@@ -53,16 +53,7 @@ class dP extends JPanel {
         g2d.setColor(Color.BLACK);
         g2d.fillRect(0, 0, getWidth(), getHeight());
         mesh tester = sp.test(0, 0, 5);
-        java.util.List<mesh> sort = new java.util.ArrayList<>();
-        sort.add(tester);
-        sortedTris.sort((a, b) -> {
-        double za = (a.v1.z + a.v2.z + a.v3.z) / 3.0;
-        double zb = (b.v1.z + b.v2.z + b.v3.z) / 3.0;
-        return Double.compare(zb, za);
-    });
-        for(int i : sort){
-            drawMesh(t,g2d,texture1);
-        }
+        drawMesh(tester);
     }
 
     public void drawMesh(mesh ts, Graphics2D g2d, BufferedImage texture) {
